@@ -1,0 +1,7 @@
+mbed_settings.py
+cmake-*
+.idea/*
+*.iml
+BUILD
+mbed-os
+mbed-os-quectel-m66-driver

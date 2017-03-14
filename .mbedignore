@@ -1,0 +1,6 @@
+mbed-os/features/mbedtls/*
+mbed-os-quectel-m66-driver/cmake-*
+mbed-os-quectel-m66-driver/mbed-os/*
+mbed-os-quectel-m66-driver/TESTS/*
+mbed-os-quectel-m66-driver/example/*
+cmake-*
