@@ -4,6 +4,6 @@ Simple relay to send data into the backend using our modem driver.
 
 ## compiling
 
-- link the mbed directory
-- link the modem driver directory
+- run `mbed update`
+- add mbed toolchain and target, run `mbed toolchain GCC_ARM` and `mbed target UBIRCH1` 
 - compile, upload

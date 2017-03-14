@@ -1,5 +1,6 @@
 #include "mbed.h"
 #include <M66Interface.h>
+#include <config.h>
 
 static const short MOTION_DETECTED = 0x01;
 
@@ -8,6 +9,12 @@ InterruptIn movement(PTC4);
 DigitalOut extPower(PTC8);
 DigitalOut led(LED1);
 Thread sendThread(osPriorityNormal, 30 * 1024);
+
+static const char *const message_template = "POST /api/avatarService/v1/device/update HTTP/1.1\r\n"
+                                            "Host: api.demo.dev.ubirch.com:8080\r\n"
+                                            "Content-Length: 120\r\n"
+                                            "\r\n"
+                                            "{\"v\":\"0.0.0\",\"a\":\"%s\",\"p\":{\"t\":1}}";
 
 void trigger(void) {
     sendThread.signal_set(MOTION_DETECTED);
@@ -27,12 +34,9 @@ void sendData(void) {
         // http://api.demo.dev.ubirch.com:8080/api/avatarService/v1/device/update
         socket.connect("api.demo.dev.ubirch.com", 8080);
 
-        const char *message =
-        "POST /api/avatarService/v1/device/update HTTP/1.1\r\n"
-        "Host: api.demo.dev.ubirch.com:8080\r\n"
-        "Content-Length: 120\r\n"
-        "\r\n"
-        "{\"v\":\"0.0.0\",\"a\":\"lddGNIlYwKFrWQf1DtfVY09f7yxUTXJUiQ9YlmJyEIKR1IuBV4MCC4aiY6698Z8rHhVBkZ15YozafqCIY9aJIA==\",\"p\":{\"t\":1}}";
+        int message_size = snprintf(NULL, 0, message_template, imeiHash);
+        char *message = (char *) malloc((size_t) (message_size + 1));
+        sprintf(message, message_template, imeiHash);
 
         int r = socket.send(message, strlen(message));
         if(r > 0) {
@@ -49,6 +53,8 @@ void sendData(void) {
             printf("send failed: %d\r\n", r);
         }
 
+        free(message);
+
         // Close the socket to return its memory and bring down the network interface
         socket.close();
     }
@@ -62,7 +68,7 @@ int main(void) {
     Thread::wait(100);
 
     // connect modem
-    const int r = modem.connect("eseye.com", "ubirch", "internet");
+    const int r = modem.connect(CELL_APN, CELL_USER, CELL_PWD);
     // make sure we actually connected
     if (r == NSAPI_ERROR_OK) {
         printf("MODEM CONNECTED\r\n");
