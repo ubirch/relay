@@ -104,31 +104,36 @@ int main(void) {
         printf("Motion Detect v1.0\r\n");
     }
 
-    // power on external system and wait for bootup
-    extPower.write(1);
-    Thread::wait(100);
+    led = 1;
+    Thread::wait(1000);
 
-    // connect modem
-    const int r = modem.connect(CELL_APN, CELL_USER, CELL_PWD);
-    // make sure we actually connected
-    if (r == NSAPI_ERROR_OK) {
-        printf("MODEM CONNECTED\r\n");
-        // start sender thread
-        sendThread.start(callback(sendData));
-        // register signal trigger
-        movement.rise(&trigger);
-        // just loop around
-        while (1) {
-            led = !led;
-            wait(1.0);
-        }
-    } else {
-        printf("MODEM CONNECT FAILED\r\n");
-        // just loop around
-        while (1) {
-            led = !led;
-            wait(0.15);
-        }
-    }
+    shutdown();
+
+//    // power on external system and wait for bootup
+//    extPower.write(1);
+//    Thread::wait(100);
+//
+//    // connect modem
+//    const int r = modem.connect(CELL_APN, CELL_USER, CELL_PWD);
+//    // make sure we actually connected
+//    if (r == NSAPI_ERROR_OK) {
+//        printf("MODEM CONNECTED\r\n");
+//        // start sender thread
+//        sendThread.start(callback(sendData));
+//        // register signal trigger
+//        movement.rise(&trigger);
+//        // just loop around
+//        while (1) {
+//            led = !led;
+//            wait(1.0);
+//        }
+//    } else {
+//        printf("MODEM CONNECT FAILED\r\n");
+//        // just loop around
+//        while (1) {
+//            led = !led;
+//            wait(0.15);
+//        }
+//    }
 
 }
