@@ -1,5 +1,9 @@
 #include "mbed.h"
 #include <M66Interface.h>
+#include <fsl_smc.h>
+#include <fsl_rcm.h>
+#include <fsl_llwu.h>
+#include <fsl_port.h>
 
 static const short MOTION_DETECTED = 0x01;
 
@@ -35,7 +39,7 @@ void sendData(void) {
         "{\"v\":\"0.0.0\",\"a\":\"lddGNIlYwKFrWQf1DtfVY09f7yxUTXJUiQ9YlmJyEIKR1IuBV4MCC4aiY6698Z8rHhVBkZ15YozafqCIY9aJIA==\",\"p\":{\"t\":1}}";
 
         int r = socket.send(message, strlen(message));
-        if(r > 0) {
+        if (r > 0) {
             // Recieve a simple http response and print out the response line
             char buffer[64];
             r = socket.recv(buffer, sizeof(buffer));
@@ -54,34 +58,69 @@ void sendData(void) {
     }
 }
 
+/*!
+ * @brief LLWU interrupt handler.
+ */
+void LLWU_IRQHandler(void)
+{
+    /* If wakeup by external pin. */
+    if (LLWU_GetExternalWakeupPinFlag(LLWU, 3U))
+    {
+        PORT_SetPinInterruptConfig(PORTA, FSL_FEATURE_LLWU_PIN3_GPIO_PIN, kPORT_InterruptOrDMADisabled);
+        PORT_ClearPinsInterruptFlags(PORTA, (1U << FSL_FEATURE_LLWU_PIN3_GPIO_PIN));
+        LLWU_ClearExternalWakeupPinFlag(LLWU, 3U);
+    }
+}
+
+
+void shutdown() {
+    PORT_SetPinInterruptConfig(PORTA, PTA4, kPORT_InterruptFallingEdge);
+    LLWU_SetExternalWakeupPinMode(LLWU, 3U, kLLWU_ExternalPinFallingEdge);
+    NVIC_EnableIRQ(LLWU_IRQn);
+
+    // power down
+    smc_power_mode_vlls_config_t vlls_config; /* Local variable for vlls configuration */
+    vlls_config.subMode = kSMC_StopSub0;
+    vlls_config.enablePorDetectInVlls0 = true;
+    vlls_config.enableLpoClock = false;
+    SMC_PreEnterStopModes();
+    SMC_SetPowerModeVlls(SMC, &vlls_config);
+    SMC_PostExitStopModes();
+}
+
+extern rcm_reset_source_t wakeupSource;
+
 int main(void) {
-    printf("Motion Detect v1.0\r\n");
-
-    // power on external system and wait for bootup
-    extPower.write(1);
-    Thread::wait(100);
-
-    // connect modem
-    const int r = modem.connect("eseye.com", "ubirch", "internet");
-    // make sure we actually connected
-    if (r == NSAPI_ERROR_OK) {
-        printf("MODEM CONNECTED\r\n");
-        // start sender thread
-        sendThread.start(callback(sendData));
-        // register signal trigger
-        movement.rise(&trigger);
-        // just loop around
-        while (1) {
-            led = !led;
-            wait(1.0);
-        }
+    // print message on cold boot
+    if (wakeupSource == RCM_GetPreviousResetSources(RCM)) {
+        printf("low power wakeup");
     } else {
-        printf("MODEM CONNECT FAILED\r\n");
-        // just loop around
-        while (1) {
-            led = !led;
-            wait(0.15);
-        }
+        printf("Motion Detect v1.0\r\n");
     }
 
+    led = 1;
+    Thread::wait(1000);
+
+//    // power on external system and wait for bootup
+//    extPower.write(1);
+//    Thread::wait(100);
+//
+//    // connect modem
+//    const int r = modem.connect("eseye.com", "ubirch", "internet");
+//    // make sure we actually connected
+//    if (r == NSAPI_ERROR_OK) {
+//        printf("MODEM CONNECTED\r\n");
+//        // start sender thread
+//        sendThread.start(callback(sendData));
+//        // register signal trigger
+//        movement.rise(&trigger);
+//        // just loop around
+//    } else {
+//        printf("MODEM CONNECT FAILED\r\n");
+//        // just loop around
+//    }
+
+    led = 0;
+
+    shutdown();
 }
