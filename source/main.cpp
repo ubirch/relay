@@ -1,5 +1,6 @@
 #include "mbed.h"
 #include <M66Interface.h>
+#include <config.h>
 #include <fsl_smc.h>
 #include <fsl_rcm.h>
 #include <fsl_llwu.h>
@@ -12,6 +13,12 @@ InterruptIn movement(PTC4);
 DigitalOut extPower(PTC8);
 DigitalOut led(LED1);
 Thread sendThread(osPriorityNormal, 30 * 1024);
+
+static const char *const message_template = "POST /api/avatarService/v1/device/update HTTP/1.1\r\n"
+                                            "Host: api.demo.dev.ubirch.com:8080\r\n"
+                                            "Content-Length: 120\r\n"
+                                            "\r\n"
+                                            "{\"v\":\"0.0.0\",\"a\":\"%s\",\"p\":{\"t\":1}}";
 
 void trigger(void) {
     sendThread.signal_set(MOTION_DETECTED);
@@ -31,12 +38,9 @@ void sendData(void) {
         // http://api.demo.dev.ubirch.com:8080/api/avatarService/v1/device/update
         socket.connect("api.demo.dev.ubirch.com", 8080);
 
-        const char *message =
-        "POST /api/avatarService/v1/device/update HTTP/1.1\r\n"
-        "Host: api.demo.dev.ubirch.com:8080\r\n"
-        "Content-Length: 120\r\n"
-        "\r\n"
-        "{\"v\":\"0.0.0\",\"a\":\"lddGNIlYwKFrWQf1DtfVY09f7yxUTXJUiQ9YlmJyEIKR1IuBV4MCC4aiY6698Z8rHhVBkZ15YozafqCIY9aJIA==\",\"p\":{\"t\":1}}";
+        int message_size = snprintf(NULL, 0, message_template, imeiHash);
+        char *message = (char *) malloc((size_t) (message_size + 1));
+        sprintf(message, message_template, imeiHash);
 
         int r = socket.send(message, strlen(message));
         if (r > 0) {
@@ -52,6 +56,8 @@ void sendData(void) {
         } else {
             printf("send failed: %d\r\n", r);
         }
+
+        free(message);
 
         // Close the socket to return its memory and bring down the network interface
         socket.close();
@@ -98,29 +104,31 @@ int main(void) {
         printf("Motion Detect v1.0\r\n");
     }
 
-    led = 1;
-    Thread::wait(1000);
+    // power on external system and wait for bootup
+    extPower.write(1);
+    Thread::wait(100);
 
-//    // power on external system and wait for bootup
-//    extPower.write(1);
-//    Thread::wait(100);
-//
-//    // connect modem
-//    const int r = modem.connect("eseye.com", "ubirch", "internet");
-//    // make sure we actually connected
-//    if (r == NSAPI_ERROR_OK) {
-//        printf("MODEM CONNECTED\r\n");
-//        // start sender thread
-//        sendThread.start(callback(sendData));
-//        // register signal trigger
-//        movement.rise(&trigger);
-//        // just loop around
-//    } else {
-//        printf("MODEM CONNECT FAILED\r\n");
-//        // just loop around
-//    }
+    // connect modem
+    const int r = modem.connect(CELL_APN, CELL_USER, CELL_PWD);
+    // make sure we actually connected
+    if (r == NSAPI_ERROR_OK) {
+        printf("MODEM CONNECTED\r\n");
+        // start sender thread
+        sendThread.start(callback(sendData));
+        // register signal trigger
+        movement.rise(&trigger);
+        // just loop around
+        while (1) {
+            led = !led;
+            wait(1.0);
+        }
+    } else {
+        printf("MODEM CONNECT FAILED\r\n");
+        // just loop around
+        while (1) {
+            led = !led;
+            wait(0.15);
+        }
+    }
 
-    led = 0;
-
-    shutdown();
 }

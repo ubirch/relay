@@ -72,19 +72,22 @@ include_directories(${MBED_OS})
 #target_include_directories(BME280 PUBLIC BME280)
 #
 add_library(mbed-os-quectel-m66-driver
-        mbed-os-quectel-m66-driver/M66Interface.cpp
-        mbed-os-quectel-m66-driver/M66ATParser/M66ATParser.cpp
-        mbed-os-quectel-m66-driver/M66ATParser/BufferedSerial/BufferedPrint.c
-        mbed-os-quectel-m66-driver/M66ATParser/BufferedSerial/BufferedSerial.cpp
-        mbed-os-quectel-m66-driver/M66ATParser/BufferedSerial/Buffer/MyBuffer.cpp
+        mbed-os-quectelM66-driver/M66Interface.cpp
+        mbed-os-quectelM66-driver/M66ATParser/M66ATParser.cpp
+        mbed-os-quectelM66-driver/M66ATParser/BufferedSerial/BufferedPrint.c
+        mbed-os-quectelM66-driver/M66ATParser/BufferedSerial/BufferedSerial.cpp
+        mbed-os-quectelM66-driver/M66ATParser/BufferedSerial/Buffer/MyBuffer.cpp
         )
 target_include_directories(mbed-os-quectel-m66-driver PUBLIC
-        mbed-os-quectel-m66-driver
-        mbed-os-quectel-m66-driver/M66ATParser
-        mbed-os-quectel-m66-driver/M66ATParser/BufferedSerial
-        mbed-os-quectel-m66-driver/M66ATParser/BufferedSerial/Buffer
+        mbed-os-quectelM66-driver
+        mbed-os-quectelM66-driver/M66ATParser
+        mbed-os-quectelM66-driver/M66ATParser/BufferedSerial
+        mbed-os-quectelM66-driver/M66ATParser/BufferedSerial/Buffer
         )
 
 add_executable(relay source/main.cpp)
 target_link_libraries(relay mbed-os mbed-os-quectel-m66-driver)
 
+add_custom_target(relay-compile ALL
+        COMMAND mbed compile --profile mbed-os/tools/profiles/debug.json
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})

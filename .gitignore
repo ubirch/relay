@@ -1,7 +1,12 @@
-mbed_settings.py
-cmake-*
 .idea/*
-*.iml
+cmake-*
+cmake-build-*
+.idea
 BUILD
-mbed-os
-mbed-os-quectel-m66-driver
+#.mbed
+core
+mbed_settings.pyc
+config.h
+cmake-build-debug/
+.temp
+*.iml
