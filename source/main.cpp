@@ -5,9 +5,7 @@
 #include <fsl_rcm.h>
 #include <fsl_llwu.h>
 #include <fsl_port.h>
-#include <targets/TARGET_Freescale/TARGET_KSDK2_MCUS/TARGET_K82F/drivers/fsl_pmc.h>
-#include <targets/TARGET_Freescale/TARGET_KSDK2_MCUS/TARGET_K82F/drivers/fsl_gpio.h>
-#include <targets/TARGET_Freescale/TARGET_KSDK2_MCUS/TARGET_K82F/drivers/fsl_rtc.h>
+#include <fsl_pmc.h>
 
 static const short MOTION_DETECTED = 0x01;
 
@@ -18,10 +16,10 @@ DigitalOut led(LED1);
 //Thread sendThread(osPriorityNormal, 30 * 1024);
 
 static const char *const message_template = "POST /api/avatarService/v1/device/update HTTP/1.1\r\n"
-                                            "Host: api.demo.dev.ubirch.com:8080\r\n"
-                                            "Content-Length: 120\r\n"
-                                            "\r\n"
-                                            "{\"v\":\"0.0.0\",\"a\":\"%s\",\"p\":{\"t\":1}}";
+"Host: api.demo.dev.ubirch.com:8080\r\n"
+"Content-Length: 120\r\n"
+"\r\n"
+"{\"v\":\"0.0.0\",\"a\":\"%s\",\"p\":{\"t\":1}}";
 
 //void trigger(void) {
 //    sendThread.signal_set(MOTION_DETECTED);
@@ -79,18 +77,16 @@ static const char *const message_template = "POST /api/avatarService/v1/device/u
  * @brief LLWU interrupt handler.
  */
 
-void LLWU_IRQHandler(void)
-{
+void LLWU_IRQHandler(void) {
     /* If wakeup by external pin. */
-    if (LLWU_GetExternalWakeupPinFlag(LLWU, LLWU_WAKEUP_PIN_IDX))
-    {
+    if (LLWU_GetExternalWakeupPinFlag(LLWU, LLWU_WAKEUP_PIN_IDX)) {
         PORT_SetPinInterruptConfig(BOARD_WAKEUP_PORT, BOARD_WAKEUP_GPIO_PIN, kPORT_InterruptOrDMADisabled);
         PORT_ClearPinsInterruptFlags(BOARD_WAKEUP_PORT, (1U << BOARD_WAKEUP_GPIO_PIN));
         LLWU_ClearExternalWakeupPinFlag(LLWU, LLWU_WAKEUP_PIN_IDX);
     }
 }
 
-void WDOG_EWM_IRQHandler(void){ //Watchdog_IRQHandler(void){
+void WDOG_EWM_IRQHandler(void) { //Watchdog_IRQHandler(void){
 //    while(1);
 }
 
@@ -122,10 +118,8 @@ void shutdown() {
 
 extern rcm_reset_source_t wakeupSource;
 
-void ShowPowerMode(smc_power_state_t powerMode)
-{
-    switch (powerMode)
-    {
+void ShowPowerMode(smc_power_state_t powerMode) {
+    switch (powerMode) {
         case kSMC_PowerStateRun:
             printf("    Power mode: RUN\r\n");
             break;
@@ -157,15 +151,15 @@ int main(void) {
     smc_power_state_t curPowerState;
 
     printf("############the power modes ##########\r\n");
-    SMC_SetPowerModeProtection(SMC, kSMC_AllowPowerModeAll);
-    if (kRCM_SourceWakeup & RCM_GetPreviousResetSources(RCM)) /* Wakeup from VLLS. */
-    {
-        PMC_ClearPeriphIOIsolationFlag(PMC);
-        NVIC_ClearPendingIRQ(LLWU_IRQn);
-    }
-
-//     print message on cold boot
-    if (kRCM_SourceWakeup & RCM_GetPreviousResetSources(RCM)) /* Wakeup from VLLS. */
+//    SMC_SetPowerModeProtection(SMC, kSMC_AllowPowerModeAll);
+//    if (kRCM_SourceWakeup & RCM_GetPreviousResetSources(RCM)) /* Wakeup from VLLS. */
+//    {
+//        PMC_ClearPeriphIOIsolationFlag(PMC);
+//        NVIC_ClearPendingIRQ(LLWU_IRQn);
+//    }
+//
+////     print message on cold boot
+    if (wakeupSource & kRCM_SourceWakeup) /* Wakeup from VLLS. */
     {
         printf("    \r\nMCU wakeup from VLLS modes...\r\n");
     } else {
@@ -175,13 +169,15 @@ int main(void) {
     curPowerState = SMC_GetPowerModeState(SMC);
     freq = CLOCK_GetFreq(kCLOCK_CoreSysClk);
     ShowPowerMode(curPowerState);
-    printf("    Core Clock = %dHz \r\n", freq);
+    printf("    Core Clock = %dHz \r\n", (int) freq);
+
+    led = 1;
 
     wait(4);
 
 //    NVIC_DisableIRQ(SysTick_IRQn);
 
-    NVIC_SetVector(LLWU_IRQn, (uint32_t)&LLWU_IRQHandler);
+    NVIC_SetVector(LLWU_IRQn, (uint32_t) &LLWU_IRQHandler);
     NVIC_EnableIRQ(LLWU_IRQn);
 
     LLWU_SetExternalWakeupPinMode(LLWU, LLWU_WAKEUP_PIN_IDX, LLWU_WAKEUP_PIN_TYPE);
@@ -189,6 +185,7 @@ int main(void) {
     //&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
     printf("now let me sleep2\r\n\n\n");
 
+    led = 0;
     smc_power_mode_vlls_config_t vlls_config;
     vlls_config.enablePorDetectInVlls0 = true;
     vlls_config.enableRam2InVlls2 = true; /*!< Enable RAM2 power in VLLS2 */

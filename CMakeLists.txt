@@ -42,12 +42,12 @@ set(MBED_OS
         mbed-os/rtos/rtx/TARGET_CORTEX_M
         mbed-os/rtos/rtx/TARGET_CORTEX_M/TARGET_RTOS_M4_M7
         mbed-os/targets/TARGET_Freescale
-        mbed-os/targets/TARGET_Freescale/TARGET_KSDK2_MCUS/api
-        mbed-os/targets/TARGET_Freescale/TARGET_KSDK2_MCUS/TARGET_K82F
-        mbed-os/targets/TARGET_Freescale/TARGET_KSDK2_MCUS/TARGET_K82F/device
-        mbed-os/targets/TARGET_Freescale/TARGET_KSDK2_MCUS/TARGET_K82F/drivers
-        mbed-os/targets/TARGET_Freescale/TARGET_KSDK2_MCUS/TARGET_K82F/device/TOOLCHAIN_GCC_ARM
-        mbed-os/targets/TARGET_Freescale/TARGET_KSDK2_MCUS/TARGET_K82F/TARGET_UBIRCH1
+        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/api
+        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/TARGET_K82F
+        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/TARGET_K82F/device
+        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/TARGET_K82F/drivers
+        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/TARGET_K82F/device/TOOLCHAIN_GCC_ARM
+        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/TARGET_K82F/TARGET_UBIRCH1
         )
 
 set(MBED_OS_SRCS "" source/main.cpp)

@@ -13,6 +13,6 @@ else
   BLBASE=$BASE/blhost
   BLHOST=$([ "$HOST" == "Darwin" ] && echo "$BLBASE/mac/blhost" || echo "$BLBASE/linux/amd64/blhost")
   ${BLHOST} -u -- flash-erase-all
-  [ $? -eq 0 ] && ${BLHOST} -u -- write-memory 0x0 ./BUILD/UBIRCH1/GCC_ARM/relay.bin
+  [ $? -eq 0 ] && ${BLHOST} -u -- write-memory 0x0 ./BUILD/UBRIDGE/GCC_ARM/relay.bin
   [ $? -eq 0 ] && ${BLHOST} -u -- reset
 fi
