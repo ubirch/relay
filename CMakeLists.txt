@@ -15,39 +15,41 @@ add_definitions(
         -DMBED_CONF_NSAPI_PRESENT
         -DMBED_CONF_EVENTS_PRESENT
         -D__MBED__
+        -DDEVICE_RTC
         -DDEVICE_I2C
+        -DDEVICE_SPI
         -DDEVICE_SERIAL
         -DDEVICE_TRNG
         -DDEVICE_INTERRUPTIN
         -DMBED_CONF_EVENTS_PRESENT=1
         -DMBED_CONF_RTOS_PRESENT=1
-        -DMBED_CONF_PLATFORM_STDIO_BAUD_RATE=9600
+        -DMBED_CONF_PLATFORM_STDIO_BAUD_RATE=115200
         -DMBED_CONF_NSAPI_PRESENT=1
-        -DMBED_CONF_PLATFORM_DEFAULT_SERIAL_BAUD_RATE=9600
-        -DMBED_CONF_PLATFORM_STDIO_FLUSH_AT_EXIT=1
+        -DMBED_CONF_PLATFORM_DEFAULT_SERIAL_BAUD_RATE=115200
+        -DMBED_CONF_PLATFORM_STDIO_FLUSH_AT_EXIT=0
         -DMBED_CONF_PLATFORM_STDIO_CONVERT_NEWLINES=0
 )
 
 set(MBED_OS
-        mbed-os
-        mbed-os/cmsis
-        mbed-os/drivers
-        mbed-os/events
-        mbed-os/events/enqueue
-        mbed-os/hal
-        mbed-os/hal/storage_abstraction
-        mbed-os/platform
+        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/TARGET_K82F/TARGET_UBRIDGE
+        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/TARGET_K82F/device/TOOLCHAIN_GCC_ARM
+        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/TARGET_K82F/drivers
+        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/TARGET_K82F/device
+        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/TARGET_K82F
+        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/api
+        mbed-os/targets/TARGET_Freescale
+        mbed-os/rtos/rtx/TARGET_CORTEX_M/TARGET_RTOS_M4_M7
+        mbed-os/rtos/rtx/TARGET_CORTEX_M
         mbed-os/rtos
         mbed-os/features
-        mbed-os/rtos/rtx/TARGET_CORTEX_M
-        mbed-os/rtos/rtx/TARGET_CORTEX_M/TARGET_RTOS_M4_M7
-        mbed-os/targets/TARGET_Freescale
-        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/api
-        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/TARGET_K82F
-        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/TARGET_K82F/device
-        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/TARGET_K82F/drivers
-        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/TARGET_K82F/device/TOOLCHAIN_GCC_ARM
-        mbed-os/targets/TARGET_Freescale/TARGET_MCUXpresso_MCUS/TARGET_K82F/TARGET_UBIRCH1
+        mbed-os/platform
+        mbed-os/hal/storage_abstraction
+        mbed-os/hal
+        mbed-os/events/enqueue
+        mbed-os/events
+        mbed-os/drivers
+        mbed-os/cmsis
+        mbed-os
         )
 
 set(MBED_OS_SRCS "" source/main.cpp)
@@ -68,6 +70,9 @@ add_library(mbed-os ${MBED_OS_SRCS})
 include_directories(${MBED_OS})
 # == END MBED OS 5 ==
 
+add_library(kinetis-lowpower kinetis-lowpower/kinetis_lowpower.cpp)
+target_include_directories(kinetis-lowpower PUBLIC kinetis-lowpower/)
+
 #add_library(BME280 BME280/BME280.cpp)
 #target_include_directories(BME280 PUBLIC BME280)
 #
@@ -86,7 +91,7 @@ target_include_directories(mbed-os-quectel-m66-driver PUBLIC
         )
 
 add_executable(relay source/main.cpp)
-target_link_libraries(relay mbed-os mbed-os-quectel-m66-driver)
+target_link_libraries(relay mbed-os kinetis-lowpower mbed-os-quectel-m66-driver)
 
 add_custom_target(relay-compile ALL
         COMMAND mbed compile --profile mbed-os/tools/profiles/debug.json
