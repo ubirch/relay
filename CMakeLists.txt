@@ -70,12 +70,9 @@ add_library(mbed-os ${MBED_OS_SRCS})
 include_directories(${MBED_OS})
 # == END MBED OS 5 ==
 
-add_library(kinetis-lowpower kinetis-lowpower/kinetis_lowpower.cpp)
-target_include_directories(kinetis-lowpower PUBLIC kinetis-lowpower/)
+add_library(kinetis-lowpower mbed-kinetis-lowpower/kinetis_lowpower.cpp)
+target_include_directories(kinetis-lowpower PUBLIC mbed-kinetis-lowpower/)
 
-#add_library(BME280 BME280/BME280.cpp)
-#target_include_directories(BME280 PUBLIC BME280)
-#
 add_library(mbed-os-quectel-m66-driver
         mbed-os-quectelM66-driver/M66Interface.cpp
         mbed-os-quectelM66-driver/M66ATParser/M66ATParser.cpp
@@ -84,10 +81,10 @@ add_library(mbed-os-quectel-m66-driver
         mbed-os-quectelM66-driver/M66ATParser/BufferedSerial/Buffer/MyBuffer.cpp
         )
 target_include_directories(mbed-os-quectel-m66-driver PUBLIC
-        mbed-os-quectelM66-driver
-        mbed-os-quectelM66-driver/M66ATParser
-        mbed-os-quectelM66-driver/M66ATParser/BufferedSerial
         mbed-os-quectelM66-driver/M66ATParser/BufferedSerial/Buffer
+        mbed-os-quectelM66-driver/M66ATParser/BufferedSerial
+        mbed-os-quectelM66-driver/M66ATParser
+        mbed-os-quectelM66-driver
         )
 
 add_executable(relay source/main.cpp)
