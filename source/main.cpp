@@ -2,55 +2,77 @@
 #include "../mbed-kinetis-lowpower/kinetis_lowpower.h"
 #include "../mbed-os-quectelM66-driver/M66Interface.h"
 #include "config.h"
+#include "http_request.h"
 
-static const char *const message_template = "POST /api/avatarService/v1/device/update HTTP/1.1\r\n"
-"Host: api.demo.dev.ubirch.com:8080\r\n"
-"Content-Length: 120\r\n"
-"\r\n"
-"{\"v\":\"0.0.0\",\"a\":\"%s\",\"p\":{\"t\":1}}";
+static const char *const message_template = "{\"v\":\"0.0.0\",\"a\":\"%s\",\"p\":{\"t\":1}}";
 
+
+void dump_response(HttpResponse* res) {
+    printf("Status: %d - %s\n", res->get_status_code(), res->get_status_message().c_str());
+
+    printf("Headers:\n");
+    for (size_t ix = 0; ix < res->get_headers_length(); ix++) {
+        printf("\t%s: %s\n", res->get_headers_fields()[ix]->c_str(), res->get_headers_values()[ix]->c_str());
+    }
+    printf("\nBody (%d bytes):\n\n%s\n", res->get_body_length(), res->get_body_as_string().c_str());
+}
 
 void sendMotionEvent() {
     M66Interface modem(GSM_UART_TX, GSM_UART_RX, GSM_PWRKEY, GSM_POWER, true);
-    TCPSocket socket;
+    TCPSocket *socket = new TCPSocket();
 
     //if(!modem.isModemAlive()) modem.powerUpModem();
-    
+
+
     // connect modem
     int r = modem.connect(CELL_APN, CELL_USER, CELL_PWD);
-    // make sure we actually connected
-    if (r == NSAPI_ERROR_OK) {
-        printf("MODEM CONNECTED\r\n");
-        socket.open(&modem);
 
-        // http://api.demo.dev.ubirch.com:8080/api/avatarService/v1/device/update
-        socket.connect("api.demo.dev.ubirch.com", 8080);
 
-        // add the auth key to the message
-        int message_size = snprintf(NULL, 0, message_template, AUTH_KEY);
-        char *message = (char *) malloc((size_t) (message_size + 1));
-        sprintf(message, message_template, AUTH_KEY);
+    // Create a TCP socket
+    printf("\n----- Setting up TCP connection -----\r\n");
 
-        r = socket.send(message, strlen(message));
-        if (r > 0) {
-            // receive a simple http response and print out the response line
-            char buffer[64];
-            r = socket.recv(buffer, sizeof(buffer));
-            if (r >= 0) {
-                printf("received %d bytes\r\n---\r\n%.*s\r\n---\r\n", r, (int) (strstr(buffer, "\r\n") - buffer),
-                       buffer);
-            } else {
-                printf("receive failed: %d\r\n", r);
-            }
-        } else {
-            printf("send failed: %d\r\n", r);
+    char theIP[20];
+    bool ipret = modem.queryIP("api.demo.dev.ubirch.com", theIP);
+
+    nsapi_error_t open_result = socket->open(&modem);
+
+    if (open_result != 0) {
+        printf("Opening TCPSocket failed... %d\n", open_result);
+        return;
+    }
+
+    nsapi_error_t connect_result = socket->connect(theIP, 8080);
+    if (connect_result != 0) {
+        printf("Connecting over TCPSocket failed... %d\n", connect_result);
+        return;
+    }
+
+    // add the auth key to the message
+    const char *AUTH_KEY = "XPL7H+/Q5hlp8JDm0n7JhK7jYmoEnjVk+CLGN10owj7EJx8hGWcVdlvxL+t7rQ/2N8I2qlICLCKnve9GcPQGYg==";
+    int message_size = snprintf(NULL, 0, message_template, AUTH_KEY);
+    char *message = (char *) malloc((size_t) (message_size + 1));
+    sprintf(message, message_template, AUTH_KEY);
+
+    // POST request to api.demo.dev.ubirch.com
+    {
+        HttpRequest *post_req = new HttpRequest(socket, HTTP_POST,
+                                                "http://api.demo.dev.ubirch.com/api/avatarService/v1/device/update");
+        post_req->set_header("Content-Type", "application/json");
+
+        HttpResponse *post_res = post_req->send(message, strlen(message));
+        if (!post_res) {
+            printf("HttpRequest failed (error code %d)\n", post_req->get_error());
+            return;
         }
+
+        printf("\n----- HTTP POST response -----\n");
+        dump_response(post_res);
 
         free(message);
 
-        // Close the socket to return its memory and bring down the network interface
-        socket.close();
+        delete post_req;
     }
+    delete socket;
 
     modem.disconnect();
     modem.powerDown();
